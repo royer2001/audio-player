@@ -1,24 +1,36 @@
 import './App.css';
-import AudioSpectrum from 'react-audio-spectrum'
-
+import AudioSpectrum from 'react-audio-spectrum';
 import { useRef, useState } from 'react';
+import { FaExpand } from 'react-icons/fa';
+import { parseBlob } from 'music-metadata';
 
-import { FaExpand } from 'react-icons/fa'; // Importa el ícono que deseas usar
-
+import { encode } from 'base64-arraybuffer';
 
 function App() {
-
   const audioRef = useRef(null);
-
   const [audioSrc, setAudioSrc] = useState('');
+  const [coverArt, setCoverArt] = useState(null);
 
-
-  const handleFileChange = (event) => {
+  const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
       const objectUrl = URL.createObjectURL(file);
-      console.log(objectUrl);
       setAudioSrc(objectUrl);
+
+      try {
+        const metadata = await parseBlob(file);
+        console.log(metadata);
+
+        if (metadata.common.picture && metadata.common.picture.length > 0) {
+          const cover = metadata.common.picture[0];
+          const base64String = encode(cover.data);
+          const imageUrl = `data:${cover.format};base64,${base64String}`;
+          setCoverArt(imageUrl);
+        }
+      } catch (error) {
+        console.error('Error leyendo etiquetas: ', error);
+      }
+
       audioRef.current.load();
     }
   };
@@ -34,24 +46,17 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <h1 className="text-3xl font-bold underline">Audio player</h1>
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+      <h1 className="text-4xl font-bold mb-6">Audio Player</h1>
 
       <button
         onClick={toggleFullscreen}
-        className="flex 
-        items-center 
-        bg-green-500 
-        hover:bg-green-700 
-        text-white 
-        font-bold 
-        py-2 px-4 
-        rounded">
+        className="flex items-center bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4"
+      >
         <FaExpand className="mr-2" /> Toggle Fullscreen
       </button>
 
-
-      <div className="flex items-center justify-center">
+      <div className="mb-4">
         <label className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded cursor-pointer">
           <input
             type="file"
@@ -69,7 +74,10 @@ function App() {
         src={audioSrc}
         controls
         autoPlay
+        className="mb-4"
       />
+
+      {coverArt && <img src={coverArt} alt="Cover Art" style={{ width: '300px', height: '300px' }} />}
 
       <AudioSpectrum
         id="audio-canvas"
@@ -83,11 +91,10 @@ function App() {
         meterColor={[
           { stop: 0, color: 'orange' },
           { stop: 0.5, color: 'red' },
-          { stop: 1, color: 'yellow' }
+          { stop: 1, color: 'yellow' },
         ]}
         gap={4}
       />
-
     </div>
   );
 }
