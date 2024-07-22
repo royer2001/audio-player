@@ -43,7 +43,7 @@ To get started with this project, follow these steps:
 To run the project locally, use the following command:
 
 ```sh
-npm start
+npm run dev
 ```
 
 Thank you for checking out the Web Audio Player project! Happy coding!
